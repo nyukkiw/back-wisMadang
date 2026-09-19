@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
+use App\Models\Kategori;
+use App\Models\Menu;
 use App\Models\Pengguna;
 
 
@@ -164,4 +166,60 @@ Route::delete('/pengguna/{id}', function (int $id) {
     return response()->json([
         'pesan' => 'Pengguna berhasil dihapus',
     ]);
+});
+
+Route::get('/kategori', function () {
+    return response()->json(Kategori::with('menu')->get());
+});
+
+Route::post('/kategori', function (Request $request) {
+    $data = $request->validate([
+        'nama_kategori' => ['required', 'string', 'max:50'],
+    ]);
+
+    return response()->json(Kategori::create($data), 201);
+});
+
+Route::get('/menu', function () {
+    return response()->json(Menu::with('kategori')->get());
+});
+
+Route::get('/v1/menu', function (Request $request) {
+    $data = $request->validate([
+        'kategori_id' => ['sometimes', 'integer', 'exists:kategori,id'],
+        'cari' => ['sometimes', 'string', 'max:100'],
+    ]);
+
+    $query = Menu::with('kategori');
+
+    if (isset($data['kategori_id'])) {
+        $query->where('kategori_id', $data['kategori_id']);
+    }
+
+    if (! empty($data['cari'])) {
+        $kataKunci = strtolower(str_replace(' ', '', $data['cari']));
+
+        $query->whereRaw(
+            "LOWER(REPLACE(nama_menu, ' ', '')) LIKE ?",
+            ["%{$kataKunci}%"]
+        );
+    }
+
+    return response()->json($query->get());
+});
+
+Route::post('/menu', function (Request $request) {
+    $data = $request->validate([
+        'kategori_id' => ['required', 'integer', 'exists:kategori,id'],
+        'nama_menu' => ['required', 'string', 'max:100'],
+        'harga' => ['required', 'numeric', 'min:0'],
+        'deskripsi' => ['nullable', 'string'],
+        'status_stok' => ['sometimes', Rule::in(['tersedia', 'habis'])],
+        'apakah_laris' => ['sometimes', 'boolean'],
+    ]);
+
+    $data['status_stok'] ??= 'tersedia';
+    $data['apakah_laris'] ??= false;
+
+    return response()->json(Menu::create($data)->load('kategori'), 201);
 });
