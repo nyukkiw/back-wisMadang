@@ -13,10 +13,6 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
-    /**
-     * 💳 Proses Checkout & Perhitungan Pajak 10% Aman
-     * POST /api/v1/pesanan/checkout
-     */
     public function prosesCheckout(Request $request)
     {
         // Asumsi ID Pengguna manual = 1 untuk keperluan testing sebelum token digabung

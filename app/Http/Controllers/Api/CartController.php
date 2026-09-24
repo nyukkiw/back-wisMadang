@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use App\function\allFunction;
 
 class CartController extends Controller 
+
 {
     public function ambilIsiKeranjang(Request $request)
     {
