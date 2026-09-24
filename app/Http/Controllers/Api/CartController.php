@@ -7,16 +7,16 @@ use App\Models\Keranjang;
 use App\Models\IsiKeranjang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\function\allFunction;
 
-class CartController extends Controller
+class CartController extends Controller 
 {
     public function ambilIsiKeranjang(Request $request)
     {
         // 💡 CATATAN: Sementara fitur login teman Anda belum digabung, 
         // kita kunci menggunakan ID pengguna manual = 1 terlebih dahulu untuk pengetesan.
         // Jika nanti token Sanctum sudah aktif, kode di bawah tinggal diganti menjadi: $userId = $request->user()->id;
-        $userId = 1; 
-
+        $userId = 1;
         // Cari keranjang aktif milik user, beserta rincian menu satuan atau paket kateringnya
         $keranjang = Keranjang::with(['isiKeranjang.menu', 'isiKeranjang.paketCatering'])
             ->where('pengguna_id', $userId)
@@ -82,7 +82,6 @@ class CartController extends Controller
         $itemKeranjang = IsiKeranjang::where($itemKondisi)->first();
 
         // LANGKAH C: Eksekusi Logika Aturan Bisnis Wis Madang
-        
         // Kondisi 1: Jika jumlah yang dikirim adalah 0, hapus item tersebut dari database
         if ($request->jumlah == 0) {
             if ($itemKeranjang) {
