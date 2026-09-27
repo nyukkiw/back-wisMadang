@@ -8,12 +8,5 @@ Route::prefix('v1')->group(function () {
     Route::get('/keranjang', [CartController::class, 'ambilIsiKeranjang']);
     Route::post('/keranjang/simpan', [CartController::class, 'simpanKeKeranjang']);
     Route::post('/pesanan/checkout', [CheckoutController::class, 'prosesCheckout']); 
-
+    
 });
-
-
-
-
-
-
-
