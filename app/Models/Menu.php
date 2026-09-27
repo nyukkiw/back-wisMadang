@@ -17,12 +17,19 @@ class Menu extends Model
         'harga',
         'deskripsi',
         'status_stok',
-        'apakah_laris'
+        'apakah_laris',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'harga' => 'decimal:2',
+            'apakah_laris' => 'boolean',
+        ];
+    }
 
     public function kategori(): BelongsTo
     {
-        return $this->belongsTo(Kategori::class, 'kategori_id', 'id');
+        return $this->belongsTo(Kategori::class, 'kategori_id');
     }
-
 }
