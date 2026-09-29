@@ -19,9 +19,9 @@ Route::post('/register', function (Request $request) {
     $data = $request->validate([
         'nama' => ['required', 'string', 'max:100'],
         'email' => ['required', 'email', 'max:100', 'unique:pengguna,email'],
-        'kata_sandi' => ['required', 'string', 'min:8', 'max:255'],
+        'kata_sandi' => ['required', 'string', 'min:6', 'max:255'],
         'no_telepon' => ['nullable', 'string', 'max:20'],
-        'peran' => ['required', Rule::in(['admin', 'kasir', 'pelanggan'])],
+        'peran' => ['required', Rule::in(['pelanggan', 'penjual'])],
     ]);
 
     $pengguna = Pengguna::create($data);
@@ -36,11 +36,20 @@ Route::post('/register', function (Request $request) {
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([
-        'email' => ['required', 'email'],
+        'email' => ['required_without:nama', 'nullable', 'email'],
+        'nama' => ['required_without:email', 'nullable', 'string'],
         'kata_sandi' => ['required', 'string'],
     ]);
 
-    $pengguna = Pengguna::where('email', $data['email'])->first();
+    $query = Pengguna::query();
+
+    if (! empty($data['email'])) {
+        $query->where('email', $data['email']);
+    } else {
+        $query->where('nama', $data['nama']);
+    }
+
+    $pengguna = $query->first();
 
     if (! $pengguna || ! Hash::check($data['kata_sandi'], $pengguna->kata_sandi)) {
         return response()->json([
@@ -94,7 +103,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-Route::middleware(['auth:sanctum', 'role:kasir,admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:penjual'])->group(function () {
     Route::get('/shift', function (Request $request) {
         return response()->json([
             'pesan' => 'Data shift kasir dapat diakses.',
@@ -111,9 +120,9 @@ Route::post('/pengguna', function (Request $request) {
     $data = $request->validate([
         'nama' => ['required', 'string', 'max:100'],
         'email' => ['required', 'email', 'max:100', 'unique:pengguna,email'],
-        'kata_sandi' => ['required', 'string', 'min:8', 'max:255'],
+        'kata_sandi' => ['required', 'string', 'min:6', 'max:255'],
         'no_telepon' => ['nullable', 'string', 'max:20'],
-        'peran' => ['required', Rule::in(['admin', 'kasir', 'pelanggan'])],
+        'peran' => ['required', Rule::in(['pelanggan', 'penjual'])],
     ]);
 
     $pengguna = Pengguna::create($data);
@@ -136,9 +145,9 @@ Route::match(['put', 'patch'], '/pengguna/{id}', function (Request $request, int
             'max:100',
             Rule::unique('pengguna', 'email')->ignore($pengguna->id),
         ],
-        'kata_sandi' => ['sometimes', 'string', 'min:8', 'max:255'],
+        'kata_sandi' => ['sometimes', 'string', 'min:6', 'max:255'],
         'no_telepon' => ['nullable', 'string', 'max:20'],
-        'peran' => ['sometimes', Rule::in(['admin', 'kasir', 'pelanggan'])],
+        'peran' => ['sometimes', Rule::in(['pelanggan', 'penjual'])],
     ]);
 
     $pengguna->update($data);

@@ -33,3 +33,4 @@ class Menu extends Model
         return $this->belongsTo(Kategori::class, 'kategori_id');
     }
 }
+
