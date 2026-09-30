@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaketCatering extends Model
 {
@@ -13,6 +14,20 @@ class PaketCatering extends Model
     protected $fillable = [
         'nama_paket',
         'harga_paket',
-        'deskrips',
+        'deskripsi',
+        'porsi',
+        'gambar',
     ];
+
+    protected $appends = ['gambar_url'];
+
+    public function ulasan(): HasMany
+    {
+        return $this->hasMany(Ulasan::class, 'paket_id');
+    }
+
+    public function getGambarUrlAttribute(): ?string
+    {
+        return $this->gambar ? asset('storage/' . $this->gambar) : null;
+    }
 }

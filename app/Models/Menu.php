@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Menu extends Model
 {
@@ -18,7 +19,10 @@ class Menu extends Model
         'deskripsi',
         'status_stok',
         'apakah_laris',
+        'gambar',
     ];
+
+    protected $appends = ['gambar_url'];
 
     protected function casts(): array
     {
@@ -28,9 +32,19 @@ class Menu extends Model
         ];
     }
 
+    public function getGambarUrlAttribute(): ?string
+    {
+        return $this->gambar ? asset('storage/' . $this->gambar) : null;
+    }
+
     public function kategori(): BelongsTo
     {
         return $this->belongsTo(Kategori::class, 'kategori_id');
+    }
+
+    public function ulasan(): HasMany
+    {
+        return $this->hasMany(Ulasan::class, 'menu_id');
     }
 }
 

@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'edgeone_ai' => [
+        'api_key' => env('EDGEONE_AI_API_KEY'),
+    ],
+
 ];

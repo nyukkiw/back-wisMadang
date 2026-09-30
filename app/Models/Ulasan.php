@@ -5,18 +5,32 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DetailPesanan extends Model
+class Ulasan extends Model
 {
-    protected $table = 'detail_pesanan';
+    protected $table = 'ulasan';
+
     public $timestamps = false;
 
     protected $fillable = [
         'pesanan_id',
         'menu_id',
         'paket_id',
-        'jumlah',
-        'harga_satuan_saat_transaksi'
+        'rating',
+        'komentar',
+        'sentimen_ai',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'dibuat_pada' => 'datetime',
+        ];
+    }
+
+    public function pesanan(): BelongsTo
+    {
+        return $this->belongsTo(Pesanan::class, 'pesanan_id');
+    }
 
     public function menu(): BelongsTo
     {

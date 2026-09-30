@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pesanan extends Model
@@ -16,18 +17,28 @@ class Pesanan extends Model
 
     protected $fillable = [
         'id',
-        'pengguna_id',
+        'pelanggan_id',
         'promo_id',
         'sesi_shift_id',
         'subtotal',
-        'pajak',
+        'pajak_10',
         'total_bayar',
         'status_pesanan',
-        'metode_pembayaran'
+        'metode_pembayaran',
     ];
 
     public function detailPesanan(): HasMany
     {
         return $this->hasMany(DetailPesanan::class, 'pesanan_id', 'id');
+    }
+
+    public function ulasan(): HasMany
+    {
+        return $this->hasMany(Ulasan::class, 'pesanan_id', 'id');
+    }
+
+    public function pengguna(): BelongsTo
+    {
+        return $this->belongsTo(Pengguna::class, 'pelanggan_id');
     }
 }

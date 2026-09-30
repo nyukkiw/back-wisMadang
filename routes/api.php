@@ -2,19 +2,36 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use App\Models\Kategori;
 use App\Models\Menu;
 use App\Models\Pengguna;
+use App\Models\PaketCatering;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckOutController;
+use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\UlasanController;
 
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/keranjang', [CartController::class, 'ambilIsiKeranjang']);
     Route::post('/keranjang/simpan', [CartController::class, 'simpanKeKeranjang']);
-    Route::post('/pesanan/checkout', [CheckoutController::class, 'prosesCheckout']); 
-    
+    Route::post('/pesanan/checkout', [CheckoutController::class, 'prosesCheckout']);
+    Route::post('/pesanan/konfirmasi', [CheckoutController::class, 'konfirmasiPembayaran']);
+    Route::get('/pesanan', [UlasanController::class, 'riwayatPesanan']);
+    Route::post('/ulasan', [UlasanController::class, 'kirimUlasan']);
+
 });
+
+// Khusus penjual (admin) - lihat semua ulasan dari semua pelanggan
+Route::middleware(['auth:sanctum', 'role:penjual'])->group(function () {
+    Route::get('/v1/ulasan', [UlasanController::class, 'semuaUlasan']);
+    Route::get('/v1/ulasan/insight', [UlasanController::class, 'insightAi']);
+    Route::get('/v1/dashboard/ringkasan', [DashboardController::class, 'ringkasan']);
+});
+
+// Dipanggil langsung oleh server Midtrans, bukan oleh pengguna yang login - jadi di luar middleware auth:sanctum
+Route::post('/midtrans/notification', [CheckOutController::class, 'notifikasiMidtrans']);
 Route::post('/register', function (Request $request) {
     $data = $request->validate([
         'nama' => ['required', 'string', 'max:100'],
@@ -177,7 +194,20 @@ Route::post('/kategori', function (Request $request) {
 });
 
 Route::get('/menu', function () {
-    return response()->json(Menu::with('kategori')->get());
+    return response()->json(
+        Menu::with('kategori')
+            ->withAvg('ulasan', 'rating')
+            ->withCount('ulasan')
+            ->get()
+    );
+});
+
+Route::get('/paket-catering', function () {
+    return response()->json(
+        PaketCatering::withAvg('ulasan', 'rating')
+            ->withCount('ulasan')
+            ->get()
+    );
 });
 
 Route::get('/v1/menu', function (Request $request) {
@@ -204,18 +234,131 @@ Route::get('/v1/menu', function (Request $request) {
     return response()->json($query->get());
 });
 
-Route::post('/menu', function (Request $request) {
-    $data = $request->validate([
-        'kategori_id' => ['required', 'integer', 'exists:kategori,id'],
-        'nama_menu' => ['required', 'string', 'max:100'],
-        'harga' => ['required', 'numeric', 'min:0'],
-        'deskripsi' => ['nullable', 'string'],
-        'status_stok' => ['sometimes', Rule::in(['tersedia', 'habis'])],
-        'apakah_laris' => ['sometimes', 'boolean'],
-    ]);
+// Kelola menu & paket catering (bikin/ubah/hapus) cuma boleh dilakukan penjual yang login
+Route::middleware(['auth:sanctum', 'role:penjual'])->group(function () {
+    Route::post('/menu', function (Request $request) {
+        $data = $request->validate([
+            'kategori_id' => ['required', 'integer', 'exists:kategori,id'],
+            'nama_menu' => ['required', 'string', 'max:100'],
+            'harga' => ['required', 'numeric', 'min:0'],
+            'deskripsi' => ['nullable', 'string'],
+            'status_stok' => ['sometimes', Rule::in(['tersedia', 'habis'])],
+            'apakah_laris' => ['sometimes', 'boolean'],
+        ]);
 
-    $data['status_stok'] ??= 'tersedia';
-    $data['apakah_laris'] ??= false;
+        $data['status_stok'] ??= 'tersedia';
+        $data['apakah_laris'] ??= false;
 
-    return response()->json(Menu::create($data)->load('kategori'), 201);
+        return response()->json(Menu::create($data)->load('kategori'), 201);
+    });
+
+    Route::match(['put', 'patch'], '/menu/{id}', function (Request $request, int $id) {
+        $menu = Menu::findOrFail($id);
+
+        $data = $request->validate([
+            'kategori_id' => ['sometimes', 'integer', 'exists:kategori,id'],
+            'nama_menu' => ['sometimes', 'string', 'max:100'],
+            'harga' => ['sometimes', 'numeric', 'min:0'],
+            'deskripsi' => ['nullable', 'string'],
+            'status_stok' => ['sometimes', Rule::in(['tersedia', 'habis'])],
+            'apakah_laris' => ['sometimes', 'boolean'],
+        ]);
+
+        $menu->update($data);
+
+        return response()->json($menu->fresh()->load('kategori'));
+    });
+
+    Route::delete('/menu/{id}', function (int $id) {
+        $menu = Menu::findOrFail($id);
+
+        try {
+            $menu->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'pesan' => 'Menu ini sudah pernah dipesan pelanggan, jadi tidak bisa dihapus permanen (supaya riwayat pesanan lama tidak rusak). Pakai tombol Nonaktifkan saja.',
+            ], 409);
+        }
+
+        return response()->json([
+            'pesan' => 'Menu berhasil dihapus',
+        ]);
+    });
+
+    Route::post('/menu/{id}/gambar', function (Request $request, int $id) {
+        $menu = Menu::findOrFail($id);
+
+        $request->validate([
+            'gambar' => ['required', 'image', 'max:2048'],
+        ]);
+
+        // Hapus file gambar lama dulu supaya gak numpuk file yang gak kepakai
+        if ($menu->gambar) {
+            Storage::disk('public')->delete($menu->gambar);
+        }
+
+        $path = $request->file('gambar')->store('menu', 'public');
+        $menu->update(['gambar' => $path]);
+
+        return response()->json($menu->fresh()->load('kategori'));
+    });
+
+    Route::post('/paket-catering', function (Request $request) {
+        $data = $request->validate([
+            'nama_paket' => ['required', 'string', 'max:100'],
+            'harga_paket' => ['required', 'numeric', 'min:0'],
+            'deskripsi' => ['nullable', 'string'],
+            'porsi' => ['required', 'integer', 'min:1'],
+        ]);
+
+        return response()->json(PaketCatering::create($data), 201);
+    });
+
+    Route::match(['put', 'patch'], '/paket-catering/{id}', function (Request $request, int $id) {
+        $paketCatering = PaketCatering::findOrFail($id);
+
+        $data = $request->validate([
+            'nama_paket' => ['sometimes', 'string', 'max:100'],
+            'harga_paket' => ['sometimes', 'numeric', 'min:0'],
+            'deskripsi' => ['nullable', 'string'],
+            'porsi' => ['sometimes', 'integer', 'min:1'],
+        ]);
+
+        $paketCatering->update($data);
+
+        return response()->json($paketCatering->fresh());
+    });
+
+    Route::delete('/paket-catering/{id}', function (int $id) {
+        $paketCatering = PaketCatering::findOrFail($id);
+
+        try {
+            $paketCatering->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'pesan' => 'Paket ini sudah pernah dipesan pelanggan, jadi tidak bisa dihapus permanen (supaya riwayat pesanan lama tidak rusak).',
+            ], 409);
+        }
+
+        return response()->json([
+            'pesan' => 'Paket catering berhasil dihapus',
+        ]);
+    });
+
+    Route::post('/paket-catering/{id}/gambar', function (Request $request, int $id) {
+        $paketCatering = PaketCatering::findOrFail($id);
+
+        $request->validate([
+            'gambar' => ['required', 'image', 'max:2048'],
+        ]);
+
+        if ($paketCatering->gambar) {
+            Storage::disk('public')->delete($paketCatering->gambar);
+        }
+
+        $path = $request->file('gambar')->store('paket-catering', 'public');
+        $paketCatering->update(['gambar' => $path]);
+
+        return response()->json($paketCatering->fresh());
+    });
 });

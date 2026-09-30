@@ -14,12 +14,9 @@ class CartController extends Controller
 {
     public function ambilIsiKeranjang(Request $request)
     {
-        // 💡 CATATAN: Sementara fitur login teman Anda belum digabung, 
-        // kita kunci menggunakan ID pengguna manual = 1 terlebih dahulu untuk pengetesan.
-        // Jika nanti token Sanctum sudah aktif, kode di bawah tinggal diganti menjadi: $userId = $request->user()->id;
-        $userId = 1;
+        $userId = $request->user()->id;
         // Cari keranjang aktif milik user, beserta rincian menu satuan atau paket kateringnya
-        $keranjang = Keranjang::with(['isiKeranjang.menu', 'isiKeranjang.paketCatering'])
+        $keranjang = Keranjang::with(['isiKeranjang.menu.kategori', 'isiKeranjang.paketCatering'])
             ->where('pengguna_id', $userId)
             ->first();
 
@@ -41,11 +38,11 @@ class CartController extends Controller
 
     public function simpanKeKeranjang(Request $request)
     {
-        // Validasi input data dari frontend / Postman
         $validator = Validator::make($request->json()->all(), [
             'menu_id'  => 'nullable|integer|exists:menu,id',
             'paket_id' => 'nullable|integer|exists:paket_catering,id',
-            'jumlah'   => 'required|integer|min:0',
+            'jumlah'   => 'required|integer|min:1',
+            'aksi'     => 'required|in:tambah,kurangi,hapus',
         ]);
 
         if ($validator->fails()) {
@@ -64,53 +61,88 @@ class CartController extends Controller
             ], 400);
         }
 
-        // Menggunakan ID pengguna tiruan manual = 1 demi kelancaran tes Postman
-        $userId = 1;
-
-        // LANGKAH A: Pastikan wadah "keranjang" user sudah ada di database. Jika belum, buat baru otomatis.
+        // Pastikan wadah "keranjang" user sudah ada di database. Jika belum, buat baru otomatis.
         $keranjang = Keranjang::firstOrCreate(
-            ['pengguna_id' => $userId],
+            ['pengguna_id' => $request->user()->id],
             ['diperbarui_pada' => now()]
         );
 
-        // LANGKAH B: Cari apakah makanan/paket ini sudah pernah dimasukkan ke dalam keranjang tersebut
-        $itemKondisi = [
+        // Cari apakah makanan/paket ini sudah pernah dimasukkan ke dalam keranjang tersebut
+        $itemKeranjang = IsiKeranjang::where([
             'keranjang_id' => $keranjang->id,
             'menu_id'      => $request->menu_id,
             'paket_id'     => $request->paket_id,
-        ];
+        ])->first();
 
-        $itemKeranjang = IsiKeranjang::where($itemKondisi)->first();
+        if ($request->aksi === 'hapus') {
+            return $this->hapusItemKeranjang($itemKeranjang);
+        }
 
-        // LANGKAH C: Eksekusi Logika Aturan Bisnis Wis Madang
-        // Kondisi 1: Jika jumlah yang dikirim adalah 0, hapus item tersebut dari database
-        if ($request->jumlah == 0) {
-            if ($itemKeranjang) {
-                $itemKeranjang->delete();
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Item berhasil dihapus dari keranjang belanja'
-                ], 200);
-            }
+        if ($request->aksi === 'kurangi') {
+            return $this->kurangiItemKeranjang($itemKeranjang, $request->jumlah);
+        }
+
+        return $this->tambahItemKeranjang($itemKeranjang, $keranjang, $request);
+    }
+
+    // Menghapus item dari keranjang, berapa pun jumlahnya
+    private function hapusItemKeranjang(?IsiKeranjang $itemKeranjang)
+    {
+        if (!$itemKeranjang) {
             return response()->json([
                 'success' => false,
                 'message' => 'Item memang tidak ada di dalam keranjang'
             ], 404);
         }
 
-        // Kondisi 2: Jika item SUDAH ADA di database, tambahkan nilainya secara akumulatif
+        $itemKeranjang->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item berhasil dihapus dari keranjang belanja'
+        ], 200);
+    }
+
+    // Mengurangi jumlah item. Kalau hasilnya 0 atau kurang, item langsung dihapus
+    private function kurangiItemKeranjang(?IsiKeranjang $itemKeranjang, int $jumlahKurang)
+    {
+        if (!$itemKeranjang) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item memang tidak ada di dalam keranjang'
+            ], 404);
+        }
+
+        $jumlahBaru = $itemKeranjang->jumlah - $jumlahKurang;
+
+        if ($jumlahBaru <= 0) {
+            return $this->hapusItemKeranjang($itemKeranjang);
+        }
+
+        $itemKeranjang->jumlah = $jumlahBaru;
+        $itemKeranjang->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Jumlah item berhasil dikurangi',
+            'data'    => $itemKeranjang
+        ], 200);
+    }
+
+    // Menambah jumlah item yang sudah ada, atau membuat baris baru kalau belum pernah ditambahkan
+    private function tambahItemKeranjang(?IsiKeranjang $itemKeranjang, Keranjang $keranjang, Request $request)
+    {
         if ($itemKeranjang) {
             $itemKeranjang->jumlah += $request->jumlah;
             $itemKeranjang->save();
-            
+
             return response()->json([
                 'success' => true,
-                'message' => 'Porsi kuantitas item berhasil ditambahkan di keranjang',
+                'message' => 'Jumlah item berhasil ditambahkan di keranjang',
                 'data'    => $itemKeranjang
             ], 200);
         }
 
-        // Kondisi 3: Jika item BELUM ADA di database, lakukan insert baris baru
         $itemBaru = IsiKeranjang::create([
             'keranjang_id' => $keranjang->id,
             'menu_id'      => $request->menu_id,
