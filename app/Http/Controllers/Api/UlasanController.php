@@ -119,4 +119,5 @@ class UlasanController extends Controller
             'data' => $insight,
         ]);
     }
+
 }

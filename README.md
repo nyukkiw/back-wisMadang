@@ -52,7 +52,7 @@ EDGEONE_AI_API_KEY=
 
 ## 3. Buat database & import struktur tabel
 
-Sebagian besar tabel di aplikasi ini (`pengguna`, `menu`, `pesanan`, `keranjang`, `ulasan`, dll) dibuat langsung sebagai desain database, bukan lewat migration satu-satu. Jadi, struktur tabelnya diimport dari file SQL, baru sisanya (tabel bawaan Laravel) dilengkapi lewat `migrate`.
+Sebagian besar tabel di aplikasi ini (`pengguna`, `menu`, `pesanan`, `keranjang`, `ulasan`, dll) dibuat langsung sebagai desain database, bukan lewat migration satu-satu. Jadi, seluruh struktur tabel (termasuk tabel bawaan Laravel) diimport sekaligus dari file SQL.
 
 Buat database kosong bernama `wis_madang` (atau nama lain, asal sama dengan `DB_DATABASE` di `.env`), lalu import strukturnya:
 
@@ -62,7 +62,7 @@ mysql -u root -p wis_madang < database/sql/wis_madang.sql
 
 > File ini **cuma berisi struktur tabel, tidak ada data**. Semua tabel masih kosong setelah ini.
 
-Lengkapi tabel bawaan Laravel yang belum ada (users, cache, jobs):
+Jalankan `migrate` buat memastikan semua migration tercatat sinkron (harusnya langsung muncul "Nothing to migrate", itu tandanya berhasil):
 
 ```bash
 php artisan migrate

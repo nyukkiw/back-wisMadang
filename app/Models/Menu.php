@@ -18,7 +18,6 @@ class Menu extends Model
         'harga',
         'deskripsi',
         'status_stok',
-        'apakah_laris',
         'gambar',
     ];
 
@@ -28,7 +27,6 @@ class Menu extends Model
     {
         return [
             'harga' => 'decimal:2',
-            'apakah_laris' => 'boolean',
         ];
     }
 

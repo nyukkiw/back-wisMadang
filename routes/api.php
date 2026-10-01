@@ -243,11 +243,9 @@ Route::middleware(['auth:sanctum', 'role:penjual'])->group(function () {
             'harga' => ['required', 'numeric', 'min:0'],
             'deskripsi' => ['nullable', 'string'],
             'status_stok' => ['sometimes', Rule::in(['tersedia', 'habis'])],
-            'apakah_laris' => ['sometimes', 'boolean'],
         ]);
 
         $data['status_stok'] ??= 'tersedia';
-        $data['apakah_laris'] ??= false;
 
         return response()->json(Menu::create($data)->load('kategori'), 201);
     });
@@ -261,7 +259,6 @@ Route::middleware(['auth:sanctum', 'role:penjual'])->group(function () {
             'harga' => ['sometimes', 'numeric', 'min:0'],
             'deskripsi' => ['nullable', 'string'],
             'status_stok' => ['sometimes', Rule::in(['tersedia', 'habis'])],
-            'apakah_laris' => ['sometimes', 'boolean'],
         ]);
 
         $menu->update($data);
@@ -322,6 +319,7 @@ Route::middleware(['auth:sanctum', 'role:penjual'])->group(function () {
             'harga_paket' => ['sometimes', 'numeric', 'min:0'],
             'deskripsi' => ['nullable', 'string'],
             'porsi' => ['sometimes', 'integer', 'min:1'],
+            'status_stok' => ['sometimes', Rule::in(['tersedia', 'habis'])],
         ]);
 
         $paketCatering->update($data);

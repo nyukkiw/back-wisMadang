@@ -17,6 +17,7 @@ class PaketCatering extends Model
         'deskripsi',
         'porsi',
         'gambar',
+        'status_stok',
     ];
 
     protected $appends = ['gambar_url'];

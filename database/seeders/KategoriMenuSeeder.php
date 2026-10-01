@@ -31,7 +31,6 @@ class KategoriMenuSeeder extends Seeder
                 'harga' => 5000,
                 'deskripsi' => 'Nasi putih hangat.',
                 'status_stok' => 'tersedia',
-                'apakah_laris' => true,
             ],
             [
                 'kategori_id' => $kategori['Nasi'],
@@ -39,7 +38,6 @@ class KategoriMenuSeeder extends Seeder
                 'harga' => 25000,
                 'deskripsi' => 'Nasi goreng dengan telur dan ayam.',
                 'status_stok' => 'tersedia',
-                'apakah_laris' => true,
             ],
             [
                 'kategori_id' => $kategori['Lauk'],
@@ -47,7 +45,6 @@ class KategoriMenuSeeder extends Seeder
                 'harga' => 18000,
                 'deskripsi' => 'Ayam goreng gurih dan renyah.',
                 'status_stok' => 'tersedia',
-                'apakah_laris' => true,
             ],
             [
                 'kategori_id' => $kategori['Lauk'],
@@ -55,7 +52,6 @@ class KategoriMenuSeeder extends Seeder
                 'harga' => 10000,
                 'deskripsi' => 'Telur dengan sambal balado.',
                 'status_stok' => 'tersedia',
-                'apakah_laris' => false,
             ],
             [
                 'kategori_id' => $kategori['Sayur'],
@@ -63,7 +59,6 @@ class KategoriMenuSeeder extends Seeder
                 'harga' => 10000,
                 'deskripsi' => 'Sayur asem segar dengan kuah khas.',
                 'status_stok' => 'tersedia',
-                'apakah_laris' => false,
             ],
             [
                 'kategori_id' => $kategori['Minuman'],
@@ -71,7 +66,6 @@ class KategoriMenuSeeder extends Seeder
                 'harga' => 5000,
                 'deskripsi' => 'Teh manis dingin.',
                 'status_stok' => 'tersedia',
-                'apakah_laris' => true,
             ],
             [
                 'kategori_id' => $kategori['Minuman'],
@@ -79,7 +73,6 @@ class KategoriMenuSeeder extends Seeder
                 'harga' => 15000,
                 'deskripsi' => 'Jus alpukat segar.',
                 'status_stok' => 'tersedia',
-                'apakah_laris' => false,
             ],
         ];
 

@@ -16,6 +16,38 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `cache`
+--
+
+DROP TABLE IF EXISTS `cache`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cache` (
+  `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `value` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expiration` int NOT NULL,
+  PRIMARY KEY (`key`),
+  KEY `cache_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `cache_locks`
+--
+
+DROP TABLE IF EXISTS `cache_locks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cache_locks` (
+  `key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `owner` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `expiration` int NOT NULL,
+  PRIMARY KEY (`key`),
+  KEY `cache_locks_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `detail_pesanan`
 --
 
@@ -37,6 +69,26 @@ CREATE TABLE `detail_pesanan` (
   CONSTRAINT `detail_pesanan_ibfk_2` FOREIGN KEY (`menu_id`) REFERENCES `menu` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `detail_pesanan_ibfk_3` FOREIGN KEY (`paket_id`) REFERENCES `paket_catering` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `failed_jobs`
+--
+
+DROP TABLE IF EXISTS `failed_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `failed_jobs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `connection` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `queue` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `exception` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `failed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -80,6 +132,48 @@ CREATE TABLE `isi_paket_catering` (
   CONSTRAINT `isi_paket_catering_ibfk_1` FOREIGN KEY (`paket_id`) REFERENCES `paket_catering` (`id`) ON DELETE CASCADE,
   CONSTRAINT `isi_paket_catering_ibfk_2` FOREIGN KEY (`menu_id`) REFERENCES `menu` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `job_batches`
+--
+
+DROP TABLE IF EXISTS `job_batches`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `job_batches` (
+  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `total_jobs` int NOT NULL,
+  `pending_jobs` int NOT NULL,
+  `failed_jobs` int NOT NULL,
+  `failed_job_ids` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `options` mediumtext COLLATE utf8mb4_unicode_ci,
+  `cancelled_at` int DEFAULT NULL,
+  `created_at` int NOT NULL,
+  `finished_at` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `jobs`
+--
+
+DROP TABLE IF EXISTS `jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `jobs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `queue` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `attempts` tinyint unsigned NOT NULL,
+  `reserved_at` int unsigned DEFAULT NULL,
+  `available_at` int unsigned NOT NULL,
+  `created_at` int unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `jobs_queue_index` (`queue`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -128,7 +222,6 @@ CREATE TABLE `menu` (
   `deskripsi` text,
   `gambar` varchar(255) DEFAULT NULL,
   `status_stok` varchar(20) DEFAULT 'tersedia',
-  `apakah_laris` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `kategori_id` (`kategori_id`),
   CONSTRAINT `menu_ibfk_1` FOREIGN KEY (`kategori_id`) REFERENCES `kategori` (`id`) ON DELETE RESTRICT
@@ -147,23 +240,28 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Tandai migration yang tabelnya sudah ikut dibuat di atas, supaya "php artisan migrate"
--- nanti tidak mencoba membuat ulang tabel yang sudah ada (hanya akan membuat tabel bawaan
--- Laravel yang belum ada: users, cache, jobs).
+-- Semua tabel di atas (termasuk tabel bawaan Laravel: users, cache, jobs, dst) sudah lengkap
+-- lewat dump ini. Baris di bawah menandai semua migration sebagai "sudah jalan", supaya
+-- "php artisan migrate" tidak mencoba membuat ulang tabel yang sudah ada.
 --
 
 INSERT INTO `migrations` (`migration`, `batch`) VALUES
+('0001_01_01_000000_create_users_table', 1),
+('0001_01_01_000001_create_cache_table', 1),
+('0001_01_01_000002_create_jobs_table', 1),
 ('2026_09_10_171658_create_personal_access_tokens_table', 1),
 ('2026_09_17_000000_create_pengguna_table', 1),
 ('2026_09_19_000000_create_kategori_table', 1),
 ('2026_09_19_000001_create_menu_table', 1),
 ('2026_09_30_234548_add_porsi_to_paket_catering_table', 2),
 ('2026_10_01_013149_add_paket_id_to_ulasan_table', 3),
-('2026_10_01_021445_add_gambar_ke_menu_dan_paket_catering', 4);
+('2026_10_01_021445_add_gambar_ke_menu_dan_paket_catering', 4),
+('2026_10_01_192426_add_status_stok_to_paket_catering_table', 5),
+('2026_10_01_214430_remove_apakah_laris_from_menu_table', 6);
 
 --
 -- Table structure for table `paket_catering`
@@ -179,8 +277,24 @@ CREATE TABLE `paket_catering` (
   `porsi` int unsigned NOT NULL DEFAULT '1',
   `deskripsi` text,
   `gambar` varchar(255) DEFAULT NULL,
+  `status_stok` varchar(20) NOT NULL DEFAULT 'tersedia',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `password_reset_tokens`
+--
+
+DROP TABLE IF EXISTS `password_reset_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `password_reset_tokens` (
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `token` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -200,7 +314,7 @@ CREATE TABLE `pengguna` (
   `dibuat_pada` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -225,7 +339,7 @@ CREATE TABLE `personal_access_tokens` (
   UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
   KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`),
   KEY `personal_access_tokens_expires_at_index` (`expires_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -298,6 +412,26 @@ CREATE TABLE `sesi_shift` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `sessions`
+--
+
+DROP TABLE IF EXISTS `sessions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sessions` (
+  `id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `user_id` bigint unsigned DEFAULT NULL,
+  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` text COLLATE utf8mb4_unicode_ci,
+  `payload` longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  `last_activity` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sessions_user_id_index` (`user_id`),
+  KEY `sessions_last_activity_index` (`last_activity`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `ulasan`
 --
 
@@ -322,6 +456,27 @@ CREATE TABLE `ulasan` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `users` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email_verified_at` timestamp NULL DEFAULT NULL,
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `remember_token` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `users_email_unique` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Dumping routines for database 'wis_madang'
 --
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -334,4 +489,4 @@ CREATE TABLE `ulasan` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-10-01 12:30:12
+-- Dump completed on 2026-10-01 21:49:04
