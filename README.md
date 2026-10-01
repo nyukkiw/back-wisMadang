@@ -1,59 +1,121 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Wis Madang — Backend (API)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend REST API untuk aplikasi Wis Madang (cafe & catering), dibangun dengan Laravel 12 + Sanctum. Menangani autentikasi, katalog menu & paket catering, keranjang, checkout dengan pembayaran Midtrans, ulasan pelanggan dengan analisis sentimen AI, serta dashboard ringkasan bisnis.
 
-## About Laravel
+Frontend-nya ada di repo terpisah: **[front-wisMadang](https://github.com/nyukkiw/front-wisMadang)**. Backend ini harus dijalankan lebih dulu sebelum frontend, karena frontend mengambil semua data dari sini.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Yang dibutuhkan sebelum mulai
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.2 atau lebih baru
+- Composer
+- MySQL (atau MariaDB)
+- Akun [Midtrans Sandbox](https://dashboard.sandbox.midtrans.com/) (gratis) — untuk fitur pembayaran
+- (Opsional) API key [Tencent EdgeOne AI Gateway](https://edgeone.ai/) — untuk fitur analisis sentimen & insight AI pada ulasan. Tanpa ini, aplikasi tetap jalan normal, cuma fitur AI-nya saja yang tidak aktif (diam-diam dilewati, bukan error).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 1. Install dependency
 
-## Learning Laravel
+```bash
+composer install
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 2. Siapkan file environment
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## Laravel Sponsors
+Buka file `.env`, lalu atur bagian database ke MySQL (ganti `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` sesuai MySQL di komputer kamu):
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=wis_madang
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-### Premium Partners
+Isi juga kunci Midtrans Sandbox (dari dashboard.sandbox.midtrans.com > Settings > Access Keys):
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```env
+MIDTRANS_SERVER_KEY=
+MIDTRANS_CLIENT_KEY=
+MIDTRANS_IS_PRODUCTION=false
+```
 
-## Contributing
+Dan kalau mau mengaktifkan fitur AI pada ulasan, isi juga:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```env
+EDGEONE_AI_API_KEY=
+```
 
-## Code of Conduct
+## 3. Buat database & import struktur tabel
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Sebagian besar tabel di aplikasi ini (`pengguna`, `menu`, `pesanan`, `keranjang`, `ulasan`, dll) dibuat langsung sebagai desain database, bukan lewat migration satu-satu. Jadi, struktur tabelnya diimport dari file SQL, baru sisanya (tabel bawaan Laravel) dilengkapi lewat `migrate`.
 
-## Security Vulnerabilities
+Buat database kosong bernama `wis_madang` (atau nama lain, asal sama dengan `DB_DATABASE` di `.env`), lalu import strukturnya:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+mysql -u root -p wis_madang < database/sql/wis_madang.sql
+```
 
-## License
+> File ini **cuma berisi struktur tabel, tidak ada data**. Semua tabel masih kosong setelah ini.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Lengkapi tabel bawaan Laravel yang belum ada (users, cache, jobs):
+
+```bash
+php artisan migrate
+```
+
+## 4. Isi data contoh (seeder)
+
+```bash
+php artisan db:seed
+```
+
+Perintah ini akan membuat:
+- **1 akun penjual (admin) contoh**, buat login dan coba fitur Dashboard/Kasir/Kelola Menu/Analisis Ulasan — lihat kredensialnya di bagian "Akun contoh" di bawah
+- 4 kategori menu + 7 menu contoh
+- 3 paket catering contoh
+
+Akun pelanggan tidak perlu di-seed — bisa daftar sendiri lewat halaman Register di frontend.
+
+## 5. Buat symlink storage (untuk gambar yang diupload)
+
+```bash
+php artisan storage:link
+```
+
+Tanpa ini, gambar menu/paket catering yang diupload lewat halaman admin tidak akan muncul di frontend.
+
+## 6. Jalankan server
+
+```bash
+php artisan serve
+```
+
+Backend akan jalan di `http://127.0.0.1:8000`. **Pastikan tetap di host & port ini** — frontend dan konfigurasi CORS (`config/cors.php`) sudah diatur khusus untuk alamat ini.
+
+## Akun contoh
+
+| Peran | Email | Password |
+|---|---|---|
+| Penjual (admin) | `penjual@wismadang.com` | `penjual123` |
+
+Untuk akun pelanggan, daftar akun baru sendiri lewat halaman Register di frontend.
+
+## Catatan untuk pengujian pembayaran (Midtrans Sandbox)
+
+Karena `MIDTRANS_IS_PRODUCTION=false`, semua pembayaran yang dicoba adalah simulasi (tidak ada uang asli yang berpindah). Untuk mensimulasikan pembayaran kartu kredit berhasil di popup Midtrans, gunakan [kartu uji Midtrans](https://docs.midtrans.com/docs/testing-payment-on-sandbox):
+
+- Nomor kartu: `4811 1111 1111 1114`
+- CVV: `123`
+- Masa berlaku: tanggal apa saja di masa depan
+- OTP/3DS (jika diminta): `112233`
+
+## Catatan teknis lain
+
+- Autentikasi pakai token (Laravel Sanctum), bukan cookie session — frontend menyimpan token dan mengirimkannya lewat header `Authorization: Bearer <token>`.
+- Role pengguna cuma ada 2: `pelanggan` dan `penjual` (tidak ada role terpisah untuk kasir — kasir memakai akun `penjual` yang sama).
+- Endpoint publik (`GET /api/menu`, `GET /api/paket-catering`, dll) bisa diakses tanpa login. Endpoint di bawah `/api/v1/*` butuh token, dan sebagian (menu/paket CRUD, dashboard, insight AI) khusus untuk role `penjual`.
